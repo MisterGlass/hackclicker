@@ -2,25 +2,43 @@
 <html>
 <head>
     <title>Trying some things</title>
-    <script src="https://ecsy.io/build/ecsy.module.js"></script>
     <script type="module">
-        import { World, System, Component, TagComponent, Types } from "https://ecsy.io/build/ecsy.module.js";        var base_velocity = .1;        // Position component
-        class Position extends Component { }        Position.schema = {
+        import { World, System, Component, TagComponent, Types } from "https://ecsy.io/build/ecsy.module.js";
+
+        var base_velocity = .1;
+        
+        // Position component
+        class Position extends Component { }
+
+        Position.schema = {
             x: { type: Types.Number },
             y: { type: Types.Number }
-        };        // Velocity component
-        class Velocity extends Component { }        Velocity.schema = {
+        };
+
+        // Velocity component
+        class Velocity extends Component { }
+
+        Velocity.schema = {
             val: { type: Types.Number }
-        };        class Renderable extends Component { }        Renderable.schema = {
+        };
+
+        class Renderable extends Component { }
+
+        Renderable.schema = {
             name: { type: Types.String }
-        }        class MovableSystem extends System {
+        }
+
+
+        class MovableSystem extends System {
             // This method will get called on every frame by default
             execute(delta, time) {
                 // Iterate through all the entities on the query
                 this.queries.moving.results.forEach(entity => {
                     var velocity = entity.getComponent(Velocity);
                     var position = entity.getMutableComponent(Position);
-                    var pace = Math.floor(velocity.val * delta)                    if (position.x >= 0 && position.x < 100 && position.y == 0) {
+                    var pace = Math.floor(velocity.val * delta)
+
+                    if (position.x >= 0 && position.x < 100 && position.y == 0) {
                         position.x += pace;
                     }
                     if (position.x == 100 && position.y >= 0 && position.y < 100) {
@@ -46,12 +64,16 @@
                     }
                 });
             }
-        }        // Define a query of entities that have "Velocity" and "Position" components
+        }
+
+        // Define a query of entities that have "Velocity" and "Position" components
         MovableSystem.queries = {
             moving: {
                 components: [Velocity, Position]
             }
-        }        // RendererSystem
+        }
+
+        // RendererSystem
         class RendererSystem extends System {
             // This method will get called on every frame by default
             execute(delta, time) {
@@ -62,17 +84,27 @@
                     mydiv.style.left = position.x + 'px';
                     mydiv.style.top = position.y + 'px';
                 });
-            }        }        // Define a query of entities that have "Renderable" and "Shape" components
+            }
+
+        }
+
+        // Define a query of entities that have "Renderable" and "Shape" components
         RendererSystem.queries = {
             renderables: { components: [Renderable, Position] }
-        }        var world = new World();
+        }
+
+        var world = new World();
         world
             .registerSystem(MovableSystem)
             .registerSystem(RendererSystem)
             .registerComponent(Renderable)
             .registerComponent(Velocity)
-            .registerComponent(Position);        function renderBox(position, name) {
-            var mydiv = document.createElement("div");            mydiv.id = name;
+            .registerComponent(Position);
+
+        function renderBox(position, name) {
+            var mydiv = document.createElement("div");
+
+            mydiv.id = name;
             mydiv.style.width = "10px";
             mydiv.style.height = "10px";
             mydiv.style.left = position.x + 'px';
@@ -96,7 +128,9 @@
                 val: val
             }
             return velocity;
-        }        var position = makePosition(0,0);
+        }
+
+        var position = makePosition(0,0);
         world
             .createEntity()
             .addComponent(Velocity, makeVelocity(base_velocity))
@@ -119,18 +153,38 @@
             .createEntity()
             .addComponent(Velocity, makeVelocity(base_velocity))
             .addComponent(Position, position)
-            .addComponent(Renderable, renderBox(position, 'box4'))        // Run!
+            .addComponent(Renderable, renderBox(position, 'box4'))
+
+        // Run!
         function run() {
             // Compute delta and elapsed time
             var time = performance.now();
-            var delta = time - lastTime;            // Run all the systems
-            world.execute(delta, time);            lastTime = time;
+            var delta = time - lastTime;
+
+            // Run all the systems
+            world.execute(delta, time);
+
+            lastTime = time;
             requestAnimationFrame(run);
-        }        var lastTime = performance.now();
+        }
+
+        var lastTime = performance.now();
         run();
     </script>
 </head>
-<body><div class="outer">    <h1>Make the thing move!</h1>
+<body>
+
+<div class="outer">
+
+
+    <h1>Make the thing move!</h1>
     <br><br>
-    <div id="container" style="position: relative;"></div></div></body>
+    <div id="container" style="position: relative;"></div>
+
+</div>
+
+
+
+
+</body>
 </html>
