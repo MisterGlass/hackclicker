@@ -2,8 +2,24 @@
 <html>
 <head>
     <title>Trying some things</title>
+
+</head>
+<body>
+
+<div class="outer">
+
+
+    <h1>Fooling around with things!</h1>
+    <br><br>
+    <div id="container" style="position: relative;">
+        <div id="box1" style="width: 300px; height:100px; padding: 10px; border: 1px solid;">
+            <progress id="progress" max="100" value="0"></progress>
+            <button>Press!</button>
+        </div>
+    </div>
+
     <script type="module">
-        import { World, System, Component, TagComponent, Types } from "https://ecsy.io/build/ecsy.module.js";
+        import { World, System, Component, TagComponent, Types, Not } from "https://ecsy.io/build/ecsy.module.js";
 
         // Countdown component
         class Countdown extends Component { }
@@ -11,7 +27,6 @@
             target: { type: Types.Number },
             rate: { type: Types.Number },
             value: { type: Types.Number },
-            active: { type: Types.Boolean },
             text: { type: Types.String }
         }
 
@@ -20,21 +35,21 @@
             name: { type: Types.String }
         }
 
+        class Multiplier extends Component { }
+        Multiplier.schema = {
+            value: { type: Types.Number }
+        }
+
         class CountdownSystem extends System {
             // This method will get called on every frame by default
             execute(delta, time) {
                 // Iterate through all the entities on the query
                 this.queries.countingdown.results.forEach(entity => {
-                    var countdown = entity.getComponent(Countdown);
+                    var countdown = entity.getMutableComponent(Countdown);
 
-                    if (countdown.active) {
-                        countdown.value += countdown.rate;
-                        if (countdown.value >= countdown.target) {
-                            // DO SOMETHING!
-                            console.log('EVENT!!!')
-                            countdown.value = 0;
-                            countdown.active = false;
-                        }
+                    countdown.value += countdown.rate * delta;
+                    if (countdown.value >= countdown.target) {
+                        entity.removeComponent(Countdown);
                     }
                 });
             }
@@ -51,15 +66,18 @@
         class RendererSystem extends System {
             // This method will get called on every frame by default
             execute(delta, time) {
-                this.queries.visibles.results.forEach(entity => {
+                this.queries.countdowns.results.forEach(entity => {
                     var rendered = entity.getComponent(Visible);
                     var countdown = entity.getComponent(Countdown);
                     var mydiv = document.getElementById(rendered.name)
 
-                    if (countdown) {
-                        var percent = Math.floor((countdown.value/countdown.target) *100);
-                        mydiv.getElementsByTagName('progress')[0].value = percent;
-                    }
+                    var percent = Math.floor((countdown.value / countdown.target) * 100);
+                    mydiv.getElementsByTagName('progress')[0].value = percent;
+                });
+                this.queries.idle.results.forEach(entity => {
+                    var rendered = entity.getComponent(Visible);
+                    var mydiv = document.getElementById(rendered.name)
+                    mydiv.getElementsByTagName('progress')[0].value = 0;
                 });
             }
 
@@ -67,7 +85,8 @@
 
         // Define a query of entities that have "Renderable" and "Shape" components
         RendererSystem.queries = {
-            visibles: { components: [Visible] }
+            countdowns: { components: [Visible, Countdown] },
+            idle: { components: [Visible, Not(Countdown)] }
         }
 
         var world = new World();
@@ -75,11 +94,12 @@
             .registerSystem(CountdownSystem)
             .registerSystem(RendererSystem)
             .registerComponent(Visible)
+            .registerComponent(Multiplier)
             .registerComponent(Countdown);
 
-        function makeCountdown(mult=1) {
+        function makeCountdown(mult = 1) {
             var countdown = {
-                target: 30 * mult,
+                target: 100 * mult,
                 rate: 1,
                 value: 0,
                 active: true,
@@ -93,11 +113,17 @@
             }
             return visible;
         }
+        function makeMultipler(val=1.1) {
+            var multipler = {
+                value: val
+            }
+            return multipler;
+        }
 
         world
-            .createEntity()
-            .addComponent(Countdown, makeCountdown(5))
-            .addComponent(Visible, makeVisible('box1'))
+            .createEntity('box1')
+            .addComponent(Multiplier, makeMultipler(1.5))
+            .addComponent(Visible, makeVisible('box1'));
 
 
 
@@ -116,21 +142,15 @@
 
         var lastTime = performance.now();
         run();
+
+        document.getElementById('box1').getElementsByTagName('button')[0].addEventListener('click', () => {
+            var entity = world.entityManager.getEntityByName('box1');
+            var multiplier = entity.getMutableComponent(Multiplier);
+            multiplier.value = multiplier.value * multiplier.value;
+            entity.addComponent(Countdown, makeCountdown(multiplier.value));
+        });
+
     </script>
-</head>
-<body>
-
-<div class="outer">
-
-
-    <h1>Fooling around with things!</h1>
-    <br><br>
-    <div id="container" style="position: relative;">
-        <div id="box1" style="width: 300px; height:100px; padding: 10px; border: 1px solid;">
-            <progress id="progress" max="100" value="0"></progress>
-        </div>
-    </div>
-
 </div>
 
 
