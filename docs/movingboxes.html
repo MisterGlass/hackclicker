@@ -7,23 +7,18 @@
 
         var base_velocity = .1;
         
-        // Position component
         class Position extends Component { }
-
         Position.schema = {
             x: { type: Types.Number },
             y: { type: Types.Number }
         };
 
-        // Velocity component
         class Velocity extends Component { }
-
         Velocity.schema = {
             val: { type: Types.Number }
         };
 
         class Renderable extends Component { }
-
         Renderable.schema = {
             name: { type: Types.String }
         }

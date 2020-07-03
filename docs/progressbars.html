@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trying some things</title>
+    <script type="module">
+        import { World, System, Component, TagComponent, Types } from "https://ecsy.io/build/ecsy.module.js";
+
+        // Countdown component
+        class Countdown extends Component { }
+        Countdown.schema = {
+            target: { type: Types.Number },
+            rate: { type: Types.Number },
+            value: { type: Types.Number },
+            active: { type: Types.Boolean },
+            text: { type: Types.String }
+        }
+
+        class Visible extends Component { }
+        Visible.schema = {
+            name: { type: Types.String }
+        }
+
+        class CountdownSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+                // Iterate through all the entities on the query
+                this.queries.countingdown.results.forEach(entity => {
+                    var countdown = entity.getComponent(Countdown);
+
+                    if (countdown.active) {
+                        countdown.value += countdown.rate;
+                        if (countdown.value >= countdown.target) {
+                            // DO SOMETHING!
+                            console.log('EVENT!!!')
+                            countdown.value = 0;
+                            countdown.active = false;
+                        }
+                    }
+                });
+            }
+        }
+
+        // Define a query of entities that have "Velocity" and "Position" components
+        CountdownSystem.queries = {
+            countingdown: {
+                components: [Countdown]
+            }
+        }
+
+        // RendererSystem
+        class RendererSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+                this.queries.visibles.results.forEach(entity => {
+                    var rendered = entity.getComponent(Visible);
+                    var countdown = entity.getComponent(Countdown);
+                    var mydiv = document.getElementById(rendered.name)
+
+                    if (countdown) {
+                        var percent = Math.floor((countdown.value/countdown.target) *100);
+                        mydiv.getElementsByTagName('progress')[0].value = percent;
+                    }
+                });
+            }
+
+        }
+
+        // Define a query of entities that have "Renderable" and "Shape" components
+        RendererSystem.queries = {
+            visibles: { components: [Visible] }
+        }
+
+        var world = new World();
+        world
+            .registerSystem(CountdownSystem)
+            .registerSystem(RendererSystem)
+            .registerComponent(Visible)
+            .registerComponent(Countdown);
+
+        function makeCountdown(mult=1) {
+            var countdown = {
+                target: 30 * mult,
+                rate: 1,
+                value: 0,
+                active: true,
+                text: 'text!'
+            }
+            return countdown;
+        }
+        function makeVisible(val) {
+            var visible = {
+                name: val
+            }
+            return visible;
+        }
+
+        world
+            .createEntity()
+            .addComponent(Countdown, makeCountdown(5))
+            .addComponent(Visible, makeVisible('box1'))
+
+
+
+        // Run!
+        function run() {
+            // Compute delta and elapsed time
+            var time = performance.now();
+            var delta = time - lastTime;
+
+            // Run all the systems
+            world.execute(delta, time);
+
+            lastTime = time;
+            requestAnimationFrame(run);
+        }
+
+        var lastTime = performance.now();
+        run();
+    </script>
+</head>
+<body>
+
+<div class="outer">
+
+
+    <h1>Fooling around with things!</h1>
+    <br><br>
+    <div id="container" style="position: relative;">
+        <div id="box1" style="width: 300px; height:100px; padding: 10px; border: 1px solid;">
+            <progress id="progress" max="100" value="0"></progress>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+</body>
+</html>
