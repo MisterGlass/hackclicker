@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trying some things</title>
+    <script src="https://ecsy.io/build/ecsy.module.js"></script>
+    <script type="module">
+        import { World, System, Component, TagComponent, Types } from "https://ecsy.io/build/ecsy.module.js";        var base_velocity = .1;        // Position component
+        class Position extends Component { }        Position.schema = {
+            x: { type: Types.Number },
+            y: { type: Types.Number }
+        };        // Velocity component
+        class Velocity extends Component { }        Velocity.schema = {
+            val: { type: Types.Number }
+        };        class Renderable extends Component { }        Renderable.schema = {
+            name: { type: Types.String }
+        }        class MovableSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+                // Iterate through all the entities on the query
+                this.queries.moving.results.forEach(entity => {
+                    var velocity = entity.getComponent(Velocity);
+                    var position = entity.getMutableComponent(Position);
+                    var pace = Math.floor(velocity.val * delta)                    if (position.x >= 0 && position.x < 100 && position.y == 0) {
+                        position.x += pace;
+                    }
+                    if (position.x == 100 && position.y >= 0 && position.y < 100) {
+                        position.y += pace;
+                    }
+                    if (position.x <= 100 && position.x > 0 && position.y == 100) {
+                        position.x -= pace;
+                    }
+                    if (position.x == 0 && position.y <= 100 && position.y > 0) {
+                        position.y -= pace;
+                    }
+                    if (position.x > 100) {
+                        position.x = 100;
+                    }
+                    if (position.x < 0) {
+                        position.x = 0;
+                    }
+                    if (position.y > 100) {
+                        position.y = 100;
+                    }
+                    if (position.y < 0) {
+                        position.y = 0;
+                    }
+                });
+            }
+        }        // Define a query of entities that have "Velocity" and "Position" components
+        MovableSystem.queries = {
+            moving: {
+                components: [Velocity, Position]
+            }
+        }        // RendererSystem
+        class RendererSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+                this.queries.renderables.results.forEach(entity => {
+                    var rendered = entity.getComponent(Renderable);
+                    var position = entity.getComponent(Position);
+                    var mydiv = document.getElementById(rendered.name)
+                    mydiv.style.left = position.x + 'px';
+                    mydiv.style.top = position.y + 'px';
+                });
+            }        }        // Define a query of entities that have "Renderable" and "Shape" components
+        RendererSystem.queries = {
+            renderables: { components: [Renderable, Position] }
+        }        var world = new World();
+        world
+            .registerSystem(MovableSystem)
+            .registerSystem(RendererSystem)
+            .registerComponent(Renderable)
+            .registerComponent(Velocity)
+            .registerComponent(Position);        function renderBox(position, name) {
+            var mydiv = document.createElement("div");            mydiv.id = name;
+            mydiv.style.width = "10px";
+            mydiv.style.height = "10px";
+            mydiv.style.left = position.x + 'px';
+            mydiv.style.top = position.y + 'px';
+            mydiv.style.backgroundColor = "black";
+            mydiv.style.position = "absolute";
+            document.getElementById('container').append(mydiv)
+            return {
+                name: name
+            };
+        }
+        function makePosition(x, y) {
+            var position = {
+                x: x,
+                y: y
+            }
+            return position;
+        }
+        function makeVelocity(val) {
+            var velocity = {
+                val: val
+            }
+            return velocity;
+        }        var position = makePosition(0,0);
+        world
+            .createEntity()
+            .addComponent(Velocity, makeVelocity(base_velocity))
+            .addComponent(Position, position)
+            .addComponent(Renderable, renderBox(position, 'box1'))
+        position = makePosition(100,100);
+        world
+            .createEntity()
+            .addComponent(Velocity, makeVelocity(base_velocity))
+            .addComponent(Position, position)
+            .addComponent(Renderable, renderBox(position, 'box2'))
+        position = makePosition(100,0);
+        world
+            .createEntity()
+            .addComponent(Velocity, makeVelocity(base_velocity))
+            .addComponent(Position, position)
+            .addComponent(Renderable, renderBox(position, 'box3'))
+        position = makePosition(0,100);
+        world
+            .createEntity()
+            .addComponent(Velocity, makeVelocity(base_velocity))
+            .addComponent(Position, position)
+            .addComponent(Renderable, renderBox(position, 'box4'))        // Run!
+        function run() {
+            // Compute delta and elapsed time
+            var time = performance.now();
+            var delta = time - lastTime;            // Run all the systems
+            world.execute(delta, time);            lastTime = time;
+            requestAnimationFrame(run);
+        }        var lastTime = performance.now();
+        run();
+    </script>
+</head>
+<body><div class="outer">    <h1>Make the thing move!</h1>
+    <br><br>
+    <div id="container" style="position: relative;"></div></div></body>
+</html>
